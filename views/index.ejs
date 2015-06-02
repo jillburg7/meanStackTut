@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title><%= title %></title>
-	<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link type="css/stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
 	<style> .glyphicon-thumbs-up { cursor:pointer } </style>
 </head>
 <body ng-app="flapperNews">
@@ -27,7 +27,7 @@
 				<a ng-show="post.link" href="{{post.link}}">{{post.title}}</a>
 				<span ng-hide="post.link">{{post.title}}</span>
 				<span>
-					<a href="#/posts/{{$index}}">Comments</a>
+					<a href="#/posts/{{post._id}}">Comments</a>
 				</span>
 			</span>
 		</div>

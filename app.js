@@ -58,3 +58,9 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
+
+var mongoose = require('mongoose');
+// require('./models/Posts');
+// require('./models/Comments');
+
+mongoose.connect('mongodb://127.0.0.1/news');
