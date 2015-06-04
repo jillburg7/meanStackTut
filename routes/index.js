@@ -9,40 +9,113 @@ router.get('/', function(req, res, next) {
 module.exports = router;
 
 /**
- * Mongoose
+ * Mongoose Schema declarations
  */
 
 var mongoose = require('mongoose');
 
-/* Schema declarations for Mongoose models */
+/* Post Schema */
 var PostSchema = new mongoose.Schema({
   title: String,
   link: String,
+  author: String,
   upvotes: {type: Number, default: 0},
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 });
+
 PostSchema.methods.upvote = function(cb) {
 	this.upvotes += 1;
 	this.save(cb);
 };
 
+
+/* Comment Schema */
 var CommentSchema = new mongoose.Schema({
   body: String,
   author: String,
   upvotes: {type: Number, default: 0},
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' }
 });
+
 CommentSchema.methods.upvote = function(cb) {
 	this.upvotes += 1;
 	this.save(cb);
 };
 
-/* mongoose models */
+/* User Schema */
+var UserSchema = new mongoose.Schema({
+	username: { type: String, lowercase: true, unique: true },
+	hash: String,
+	salt: String
+});
+
+var crypto = require('crypto');
+var jwtoken = require('jsonwebtoken');
+
+UserSchema.methods.setPassword = function(password) {
+	this.salt = crypto.randomBytes(16).toString('hex');
+	this.hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
+};
+
+UserSchema.methods.validPassword = function(password) {
+	var hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
+	return this.hash === hash;
+};
+
+UserSchema.methods.generateJWT = function() {
+	// set expiration to 60 days
+	var today = new Date();
+	var exp = new Date(today);
+	exp.setDate(today.getDate() + 60);
+
+	return jwtoken.sign({
+		_id: this._id,
+		username: this.username,
+		exp: parseInt(exp.getTime() / 1000)
+	}, 'SECRET');
+};
+
+
+/* Instantiate mongoose models */
 var Post = mongoose.model('Post', PostSchema);
 var Comment = mongoose.model('Comment', CommentSchema);
+var User = mongoose.model('User', UserSchema);
 
-// var Post = mongoose.model('Post');
-// var Comment = mongoose.model('Comment');
+var passport = require('passport');
+var jwt = require('express-jwt');
+var auth = jwt({secret: 'SECRET', userProperty: 'payload'});
+
+router.post('/register', function(req, res, next) {
+	if (!req.body.username || !req.body.password) {
+		return res.status(400).json({message: 'Please fill out all fields'});
+	}
+	var user = new User();
+	user.username = req.body.username;
+	user.setPassword(req.body.password);
+
+	user.save(function(err) {
+		if (err) { return next(err); }
+
+		return res.json({token: user.generateJWT()});
+	});
+});
+
+router.post('/login', function(req, res, next) {
+	if (!req.body.username || !req.body.password) {
+		return res.status(400).json({message: 'Please fill out all fields'});
+	}
+
+	passport.authenticate('local', function(err, user, info) {
+		if (err) { return next(err); }
+
+		if (user) {
+			return res.json({token: user.generateJWT()});
+		} else {
+			return res.status(401).json(info);
+		}
+	})(req, res, next);
+});
+
 
 /**
  * Setting up routing
@@ -58,8 +131,9 @@ router.get('/posts', function(req, res, next) {
 });
 
 /* create a new post */
-router.post('/posts', function(req, res, next) {
+router.post('/posts', auth, function(req, res, next) {
   var post = new Post(req.body);
+  post.author = req.payload.username;
 
   post.save(function(err, post){
     if(err){ return next(err); }
@@ -91,7 +165,7 @@ router.get('/posts/:post', function(req, res, next) {
 });
 
 /* update post object */
-router.put('/posts/:post/upvote', function(req, res, next) {
+router.put('/posts/:post/upvote', auth, function(req, res, next) {
 	req.post.upvote(function(err, post) {
 		if (err) { return next(err); }
 
@@ -100,9 +174,10 @@ router.put('/posts/:post/upvote', function(req, res, next) {
 });
 
 /* create comment */
-router.post('/posts/:post/comments', function(req, res, next) {
+router.post('/posts/:post/comments', auth, function(req, res, next) {
 	var comment = new Comment(req.body);
 	comment.post = req.post;
+	comment.author = req.payload.username;
 
 	comment.save(function(err, comment) {
 		if (err) { return next(err); }
@@ -130,7 +205,7 @@ router.param('comment', function(req, res, next, id) {
 });
 
 /* update comment object with upvote */
-router.put('/posts/:post/comments/:comment/upvote', function(req, res, next) {
+router.put('/posts/:post/comments/:comment/upvote', auth, function(req, res, next) {
 	req.comment.upvote(function(err, comment) {
 		if (err) { return next(err); }
 

@@ -22,6 +22,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 app.use('/', routes);
 app.use('/users', users);
 
@@ -62,5 +63,11 @@ module.exports = app;
 var mongoose = require('mongoose');
 // require('./models/Posts');
 // require('./models/Comments');
+
+var passport = require('passport');
+// require('./models/Users');
+require('./config/passport');
+app.use(passport.initialize());
+
 
 mongoose.connect('mongodb://127.0.0.1/news');
