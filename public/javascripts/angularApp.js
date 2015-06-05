@@ -154,6 +154,13 @@ app.factory('posts', ['$http', 'auth', function($http, auth) {
 		});
 	};
 
+	o.remove = function(post) {
+		return $http.delete('/posts/' + post._id).success(function(data) {
+			// console.log(data);
+			// o.posts.splice(index, 1);
+		});
+	};
+
 	o.upvote = function(post) {
 		return $http.put('/posts/' + post._id + '/upvote', null, {
 			headers: { Authorization: 'Bearer ' + auth.getToken() }
@@ -199,6 +206,7 @@ app.factory('posts', ['$http', 'auth', function($http, auth) {
 app.controller('MainCtrl', ['$scope', 'posts', 'auth', function($scope, posts, auth) {
 	$scope.posts = posts.posts;
 	$scope.isLoggedIn = auth.isLoggedIn;
+	$scope.currentUser = auth.currentUser;
 
 	$scope.addPost = function() {
 		if ($scope.title) {
@@ -219,6 +227,13 @@ app.controller('MainCtrl', ['$scope', 'posts', 'auth', function($scope, posts, a
 
 	$scope.decrementUpvotes = function(post) {
 		posts.downvote(post);
+	};
+
+	$scope.removePost = function(post) {
+		if (post.author === auth.currentUser()) {
+			posts.remove(post);
+			$scope.posts = posts.posts;
+		}
 	};
 }]);
 
