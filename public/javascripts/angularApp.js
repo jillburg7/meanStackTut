@@ -162,6 +162,14 @@ app.factory('posts', ['$http', 'auth', function($http, auth) {
 		});
 	};
 
+	o.downvote = function(post) {
+		return $http.put('/posts/' + post._id + '/downvote', null, {
+			headers: { Authorization: 'Bearer ' + auth.getToken() }
+		}).success(function(data) {
+			post.upvotes -= 1;
+		});
+	};
+
 	o.addComment = function(id, comment) {
 		return $http.post('/posts/' + id + '/comments', comment, {
 			headers: { Authorization: 'Bearer ' + auth.getToken() }
@@ -173,6 +181,14 @@ app.factory('posts', ['$http', 'auth', function($http, auth) {
 			headers: { Authorization: 'Bearer ' + auth.getToken() }
 		}).success(function(data) {
 			comment.upvotes += 1;
+		});
+	};
+
+	o.downvoteComment = function(post, comment) {
+		return $http.put('/posts/' + post._id + '/comments/' + comment._id + '/downvote', null, {
+			headers: { Authorization: 'Bearer ' + auth.getToken() }
+		}).success(function(data) {
+			comment.upvotes -= 1;
 		});
 	};
 
@@ -200,6 +216,10 @@ app.controller('MainCtrl', ['$scope', 'posts', 'auth', function($scope, posts, a
 	$scope.incrementUpvotes = function(post) {
 		posts.upvote(post);
 	};
+
+	$scope.decrementUpvotes = function(post) {
+		posts.downvote(post);
+	};
 }]);
 
 /* post detail controller */
@@ -222,5 +242,9 @@ app.controller('PostsCtrl', ['$scope', 'posts', 'post', 'auth', function($scope,
 
 	$scope.incrementUpvotes = function(comment) {
 		posts.upvoteComment(post, comment);
+	};
+
+	$scope.decrementUpvotes = function(comment) {
+		posts.downvoteComment(post, comment);
 	};
 }]);

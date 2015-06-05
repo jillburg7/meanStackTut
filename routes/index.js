@@ -3,7 +3,7 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Flappa' });
 });
 
 module.exports = router;
@@ -19,7 +19,7 @@ var PostSchema = new mongoose.Schema({
   title: String,
   link: String,
   author: String,
-  upvotes: {type: Number, default: 0},
+  upvotes: {type: Number, default: 1},
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 });
 
@@ -28,17 +28,27 @@ PostSchema.methods.upvote = function(cb) {
 	this.save(cb);
 };
 
+PostSchema.methods.downvote = function(cb) {
+	this.upvotes -= 1;
+	this.save(cb);
+};
+
 
 /* Comment Schema */
 var CommentSchema = new mongoose.Schema({
   body: String,
   author: String,
-  upvotes: {type: Number, default: 0},
+  upvotes: {type: Number, default: 1},
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' }
 });
 
 CommentSchema.methods.upvote = function(cb) {
 	this.upvotes += 1;
+	this.save(cb);
+};
+
+CommentSchema.methods.downvote = function(cb) {
+	this.upvotes -= 1;
 	this.save(cb);
 };
 
@@ -164,9 +174,18 @@ router.get('/posts/:post', function(req, res, next) {
 	});
 });
 
-/* update post object */
+/* update post object with upvote */
 router.put('/posts/:post/upvote', auth, function(req, res, next) {
 	req.post.upvote(function(err, post) {
+		if (err) { return next(err); }
+
+		res.json(post);
+	});
+});
+
+/* update post object with downvote */
+router.put('/posts/:post/downvote', auth, function(req, res, next) {
+	req.post.downvote(function(err, post) {
 		if (err) { return next(err); }
 
 		res.json(post);
@@ -213,3 +232,11 @@ router.put('/posts/:post/comments/:comment/upvote', auth, function(req, res, nex
 	});
 });
 
+/* update comment object with downvote */
+router.put('/posts/:post/comments/:comment/downvote', auth, function(req, res, next) {
+	req.comment.downvote(function(err, comment) {
+		if (err) { return next(err); }
+
+		res.json(comment);
+	});
+});
