@@ -154,10 +154,11 @@ app.factory('posts', ['$http', 'auth', function($http, auth) {
 		});
 	};
 
-	o.remove = function(post) {
+	o.remove = function(post, index) {
 		return $http.delete('/posts/' + post._id).success(function(data) {
-			// console.log(data);
-			// o.posts.splice(index, 1);
+			console.log(index);
+			console.log(o.posts[index]);
+			o.posts.splice(index, 1);
 		});
 	};
 
@@ -231,7 +232,11 @@ app.controller('MainCtrl', ['$scope', 'posts', 'auth', function($scope, posts, a
 
 	$scope.removePost = function(post) {
 		if (post.author === auth.currentUser()) {
-			posts.remove(post);
+			for (var i = 0; i < posts.posts.length; i++) {
+				if (posts.posts[i]._id === post._id) {
+					posts.remove(post, i);
+				}
+			}
 			$scope.posts = posts.posts;
 		}
 	};
