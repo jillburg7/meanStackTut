@@ -63,9 +63,9 @@ module.exports = app;
 var mongoose = require('mongoose');
 // require('./models/Posts');
 // require('./models/Comments');
+// require('./models/Users');
 
 var passport = require('passport');
-// require('./models/Users');
 require('./config/passport');
 app.use(passport.initialize());
 

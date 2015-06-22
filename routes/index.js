@@ -85,7 +85,6 @@ UserSchema.methods.generateJWT = function() {
 	}, 'SECRET');
 };
 
-
 /* Instantiate mongoose models */
 var Post = mongoose.model('Post', PostSchema);
 var Comment = mongoose.model('Comment', CommentSchema);
